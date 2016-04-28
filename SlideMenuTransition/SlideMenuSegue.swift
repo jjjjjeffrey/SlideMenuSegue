@@ -42,9 +42,9 @@ class SlideMenuTransitoningManager: UIPercentDrivenInteractiveTransition, UIView
         let translation = pan.translationInView(pan.view!)
         
         
-        let d =  translation.x / ((self.sourceViewController?.view.frame.width)!-100)
+        var d =  translation.x / ((self.sourceViewController?.view.frame.width)!-100)
         
-        
+        d = d > 1 ? 1 : d
         
         switch (pan.state) {
             
@@ -63,7 +63,14 @@ class SlideMenuTransitoningManager: UIPercentDrivenInteractiveTransition, UIView
         default:
             
             self.interactive = false
-            self.finishInteractiveTransition()
+            
+            if d > 0.3  {
+                self.finishInteractiveTransition()
+            } else {
+                self.cancelInteractiveTransition()
+            }
+            
+            
         }
     }
     
@@ -118,8 +125,15 @@ class SlideMenuPresentAnimator: NSObject, UIViewControllerAnimatedTransitioning 
             toViewController.view.frame.origin.x = 0
             fromViewController.view.frame.origin.x = containerView.bounds.width-100
             }, completion: { (finished) -> Void in
-                transitionContext.completeTransition(finished)
-                UIApplication.sharedApplication().keyWindow!.addSubview(fromViewController.view)
+                
+                if transitionContext.transitionWasCancelled() {
+                    transitionContext.completeTransition(false)
+                    UIApplication.sharedApplication().keyWindow!.addSubview(fromViewController.view)
+                } else {
+                    transitionContext.completeTransition(true)
+                    UIApplication.sharedApplication().keyWindow!.addSubview(fromViewController.view)
+                }
+                
         })
     }
     
@@ -158,7 +172,7 @@ class SlideMenuPresentationController: UIPresentationController {
     
     lazy var blurView: UIVisualEffectView = {
        let v = UIVisualEffectView(frame: self.presentingViewController.view.bounds)
-        v.effect = UIBlurEffect(style: .Light)
+        v.effect = UIBlurEffect(style: .Dark)
         v.alpha = 0.1
         return v
     }()
@@ -170,12 +184,16 @@ class SlideMenuPresentationController: UIPresentationController {
     
     override func presentationTransitionWillBegin() {
         
+
         presentingViewController.view.addSubview(blurView)
+
         
         presentedViewController.transitionCoordinator()?.animateAlongsideTransition({ (transitionCoordinatorContext) in
             self.blurView.alpha = 1.0
             }, completion: { (transitionCoordinatorContext) in
-                
+                if transitionCoordinatorContext.isCancelled() {
+                    self.blurView.removeFromSuperview()
+                }
         })
         
     }
@@ -186,6 +204,10 @@ class SlideMenuPresentationController: UIPresentationController {
             }, completion: { (transitionCoordinatorContext) in
                 self.blurView.removeFromSuperview()
         })
+    }
+    
+    override func dismissalTransitionDidEnd(completed: Bool) {
+        self.blurView.removeFromSuperview()
     }
     
     
