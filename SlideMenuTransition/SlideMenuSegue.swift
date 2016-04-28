@@ -27,7 +27,7 @@ class SlideMenuTransitoningManager: UIPercentDrivenInteractiveTransition, UIView
     
     private var enterPanGesture: UIScreenEdgePanGestureRecognizer!
     
-    var sourceViewController: UIViewController? {
+    weak var sourceViewController: UIViewController? {
         didSet {
             self.enterPanGesture = UIScreenEdgePanGestureRecognizer()
             self.enterPanGesture.addTarget(self, action: #selector(self.handleOnstagePan(_:)))
